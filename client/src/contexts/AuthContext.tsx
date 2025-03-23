@@ -9,6 +9,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (username: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
@@ -20,68 +21,65 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true); // NEW: Loading state
 
   useEffect(() => {
-    // Check for stored auth data on mount
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
     }
+    setLoading(false); // Auth check complete
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Simulate API call
+    setLoading(true); // NEW: Show loading while signing in
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, validate credentials with backend
-    const mockUser = {
-      id: '1',
-      username: email.split('@')[0],
-      email
-    };
-    
+
+    const mockUser = { id: '1', username: email.split('@')[0], email };
     setUser(mockUser);
     setIsAuthenticated(true);
     localStorage.setItem('user', JSON.stringify(mockUser));
+
+    setLoading(false); // Done loading
   };
 
   const signUp = async (username: string, email: string, password: string) => {
-    // Simulate API call
+    setLoading(true); // NEW: Show loading while signing up
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, create user in backend
-    const mockUser = {
-      id: '1',
-      username,
-      email
-    };
-    
+
+    const mockUser = { id: '1', username, email };
     setUser(mockUser);
     setIsAuthenticated(true);
     localStorage.setItem('user', JSON.stringify(mockUser));
+
+    setLoading(false); // Done loading
   };
 
   const signOut = () => {
+    setLoading(true); // NEW: Indicate loading while signing out
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('user');
+    setLoading(false); // Done loading
   };
 
   const updateProfile = async (data: Partial<User>) => {
-    // Simulate API call
+    setLoading(true); // NEW: Show loading while updating profile
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, update user in backend
+
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
+
+    setLoading(false); // Done loading
   };
 
   return (
     <AuthContext.Provider value={{
       user,
       isAuthenticated,
+      loading,
       signIn,
       signUp,
       signOut,
@@ -94,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
